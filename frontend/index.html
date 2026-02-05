@@ -7,8 +7,33 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <h1>BizTone Converter</h1>
-    <p>프론트엔드 UI가 여기에 구현될 예정입니다.</p>
+    <div class="app-container">
+        <header>
+            <h1>BizTone Converter</h1>
+        </header>
+        <main class="main-content">
+            <div class="card input-section">
+                <h2>원문 입력</h2>
+                <textarea id="user-input" placeholder="여기에 비즈니스에 맞게 변환하고 싶은 내용을 입력하세요. (최대 500자)" maxlength="500"></textarea>
+                <div class="input-controls">
+                    <span id="char-count">0/500자</span>
+                    <select id="target-select">
+                        <option value="upward">상사 (Upward)</option>
+                        <option value="lateral">타팀 동료 (Lateral)</option>
+                        <option value="external">고객 (External)</option>
+                    </select>
+                    <button id="convert-button" class="primary-button">변환하기</button>
+                </div>
+            </div>
+            <div class="card output-section">
+                <h2>변환 결과</h2>
+                <textarea id="converted-output" placeholder="변환된 결과가 여기에 표시됩니다." readonly></textarea>
+                <div class="output-controls">
+                    <button id="copy-button" class="secondary-button">복사하기</button>
+                </div>
+            </div>
+        </main>
+    </div>
 
     <script src="js/script.js"></script>
 </body>
