@@ -23,9 +23,11 @@ except Exception as e:
 @app.route('/convert', methods=['POST'])
 def convert_text():
     """
-    텍스트 변환을 위한 API 엔드포인트.
-    Sprint 1에서는 실제 변환 로직 대신 더미 데이터를 반환합니다.
+    실제 Groq AI를 사용하여 텍스트 변환을 수행하는 API 엔드포인트.
     """
+    if not groq_client:
+        return jsonify({"error": "Groq 클라이언트가 초기화되지 않았습니다. API 키를 확인해주세요."}), 500
+
     data = request.json
     original_text = data.get('text')
     target = data.get('target')
@@ -33,16 +35,50 @@ def convert_text():
     if not original_text or not target:
         return jsonify({"error": "텍스트와 변환 대상은 필수입니다."}), 400
 
-    # Sprint 1: 실제 Groq API 호출 대신 더미 응답 반환
-    dummy_response = f"'{original_text}'를 '{target}'에게 보내는 말투로 변환한 결과입니다. (이것은 더미 응답입니다.)"
-    
-    response_data = {
-        "original_text": original_text,
-        "convertedText": dummy_response, # Changed from converted_text to convertedText
-        "target": target
+    # 대상(페르소나)별 시스템 프롬프트 정의
+    system_prompts = {
+        "upward": "You are a helpful assistant who is an expert in business communication in Korean. Your role is to refine the user's text to be suitable for reporting to a superior. The tone should be formal, respectful, and clear. Start with the conclusion, and then provide the context or reason. Ensure the message is professional and builds trust.",
+        "lateral": "You are a helpful assistant who is an expert in business communication in Korean. Your role is to refine the user's text for communicating with a colleague from another team. The tone should be friendly yet professional, fostering a collaborative atmosphere. Clearly state the request, background, and any deadlines. Use polite and respectful language.",
+        "external": "You are a helpful assistant who is an expert in business communication in Korean. Your role is to refine the user's text for communicating with an external customer. The tone must be extremely polite, formal, and professional, using honorifics (극존칭). The message should build trust and convey a high level of service-mindedness. Respond only with the converted text, without any additional explanations."
     }
-    
-    return jsonify(response_data)
+
+    system_prompt = system_prompts.get(target)
+    if not system_prompt:
+        return jsonify({"error": "유효하지 않은 변환 대상입니다."}), 400
+
+    try:
+        chat_completion = groq_client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": original_text,
+                }
+            ],
+            model="moonshotai/kimi-k2-instruct-0905",
+            temperature=0.7,
+            max_tokens=1024,
+            top_p=1,
+            stop=None,
+        )
+
+        converted_text = chat_completion.choices[0].message.content
+
+        response_data = {
+            "original_text": original_text,
+            "convertedText": converted_text,
+            "target": target
+        }
+        
+        return jsonify(response_data)
+
+    except Exception as e:
+        print(f"Groq API call failed: {e}")
+        # FR-05 요구사항: 사용자에게 명확한 오류 메시지 표시
+        return jsonify({"error": "AI 모델을 호출하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."}), 500
 
 @app.route('/')
 def index():

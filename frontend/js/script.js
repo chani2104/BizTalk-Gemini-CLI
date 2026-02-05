@@ -13,10 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         userInput.addEventListener('input', () => {
             const currentLength = userInput.value.length;
             charCount.textContent = `${currentLength}/${MAX_CHARS}자`;
-            if (currentLength > MAX_CHARS) {
-                userInput.value = userInput.value.substring(0, MAX_CHARS);
-                charCount.textContent = `${MAX_CHARS}/${MAX_CHARS}자`;
-            }
+            // The maxlength attribute already handles truncation.
         });
         // Initialize char count on load
         charCount.textContent = `${userInput.value.length}/${MAX_CHARS}자`;
@@ -33,8 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Disable button and show loading state
             convertButton.disabled = true;
             convertButton.textContent = '변환 중...';
+            convertButton.classList.add('opacity-50', 'cursor-not-allowed');
             convertedOutput.value = '변환 중입니다. 잠시만 기다려 주세요...';
 
             try {
@@ -57,8 +56,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Conversion failed:', error);
                 convertedOutput.value = `오류가 발생했습니다: ${error.message}. 잠시 후 다시 시도해주세요.`;
             } finally {
+                // Re-enable button
                 convertButton.disabled = false;
                 convertButton.textContent = '변환하기';
+                convertButton.classList.remove('opacity-50', 'cursor-not-allowed');
             }
         });
     }
@@ -67,16 +68,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (copyButton && convertedOutput) {
         copyButton.addEventListener('click', async () => {
             if (convertedOutput.value.trim() === '') {
-                alert('변환된 내용이 없습니다.');
+                // You might want to provide a small, non-blocking notification here instead of an alert
                 return;
             }
 
             try {
                 await navigator.clipboard.writeText(convertedOutput.value);
+                
                 // Provide visual feedback
+                const originalText = copyButton.textContent;
                 copyButton.textContent = '복사 완료!';
+                copyButton.classList.remove('bg-gray-600', 'hover:bg-gray-700');
+                copyButton.classList.add('bg-green-500', 'hover:bg-green-600');
+
                 setTimeout(() => {
-                    copyButton.textContent = '복사하기';
+                    copyButton.textContent = originalText;
+                    copyButton.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    copyButton.classList.add('bg-gray-600', 'hover:bg-gray-700');
                 }, 2000);
             } catch (err) {
                 console.error('Failed to copy: ', err);
